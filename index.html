@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logan Sturrock</title>
+  <style>
+    /* ── To change the password, edit the value in the script below ── */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #111111;
+      --gray:  #888888;
+      --light: #cccccc;
+      --bg:    #ffffff;
+      --font:  'Courier New', Courier, monospace;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--black);
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wrap {
+      text-align: center;
+      width: 280px;
+    }
+
+    h1 {
+      font-size: 1rem;
+      font-weight: bold;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      color: var(--gray);
+      margin-bottom: 2rem;
+    }
+
+    input[type="password"] {
+      width: 100%;
+      font-family: var(--font);
+      font-size: 13px;
+      border: none;
+      border-bottom: 1px solid var(--light);
+      outline: none;
+      padding: 0.4rem 0;
+      text-align: center;
+      background: transparent;
+      color: var(--black);
+      transition: border-color 0.15s ease;
+      letter-spacing: 0.2em;
+    }
+
+    input[type="password"]:focus {
+      border-color: var(--black);
+    }
+
+    input[type="password"].shake {
+      animation: shake 0.35s ease;
+      border-color: var(--black);
+    }
+
+    @keyframes shake {
+      0%   { transform: translateX(0); }
+      20%  { transform: translateX(-6px); }
+      40%  { transform: translateX(6px); }
+      60%  { transform: translateX(-4px); }
+      80%  { transform: translateX(4px); }
+      100% { transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <h1>Logan Sturrock</h1>
+    <p>enter password to continue</p>
+    <input type="password" id="pw" autofocus placeholder="········" />
+  </div>
+
+  <script>
+    // ── Change your password here ──────────────────────
+    const PASSWORD = "OpenSesame";
+    // ──────────────────────────────────────────────────
+
+    const input = document.getElementById("pw");
+
+    input.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        if (input.value === PASSWORD) {
+          window.location.href = "portfolio.html";
+        } else {
+          input.value = "";
+          input.classList.remove("shake");
+          void input.offsetWidth;
+          input.classList.add("shake");
+          setTimeout(() => input.classList.remove("shake"), 400);
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>
