@@ -1,0 +1,168 @@
+/* ── Reset ───────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Variables ───────────────────────────────────── */
+:root {
+  --black: #111111;
+  --gray:  #888888;
+  --light: #cccccc;
+  --bg:    #ffffff;
+  --font:  'Courier New', Courier, monospace;
+  --size:  13px;
+  --line:  1.8;
+  --max:   640px;
+  --pad:   2rem;
+}
+
+/* ── Base ─────────────────────────────────────────── */
+html {
+  font-size: var(--size);
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--black);
+  line-height: var(--line);
+}
+
+body {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: var(--pad);
+}
+
+a {
+  color: var(--black);
+  text-decoration: none;
+  border-bottom: 1px solid var(--light);
+  transition: border-color 0.15s ease;
+}
+
+a:hover {
+  border-color: var(--black);
+}
+
+/* ── Header / Nav ─────────────────────────────────── */
+header {
+  margin-bottom: 4rem;
+}
+
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.site-name {
+  font-weight: bold;
+  letter-spacing: 0.02em;
+}
+
+.nav-links a {
+  border-bottom: none;
+  color: var(--gray);
+}
+
+.nav-links a:hover {
+  color: var(--black);
+}
+
+/* ── Hero ─────────────────────────────────────────── */
+#hero {
+  margin-bottom: 4rem;
+}
+
+#hero h1 {
+  font-size: 1.1rem;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.tagline {
+  color: var(--gray);
+}
+
+/* ── Sections ─────────────────────────────────────── */
+section {
+  margin-bottom: 4rem;
+}
+
+h2 {
+  font-size: var(--size);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--gray);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--light);
+}
+
+p {
+  color: var(--black);
+  max-width: 480px;
+}
+
+/* ── Project List ─────────────────────────────────── */
+.project-list {
+  list-style: none;
+}
+
+.project {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--light);
+  cursor: pointer;
+  transition: padding-left 0.15s ease;
+}
+
+.project:first-child {
+  border-top: 1px solid var(--light);
+}
+
+.project:hover {
+  padding-left: 0.5rem;
+}
+
+.project-title {
+  color: var(--black);
+}
+
+.project-meta {
+  color: var(--gray);
+  font-size: 0.9em;
+  white-space: nowrap;
+  margin-left: 1rem;
+}
+
+/* ── Footer ───────────────────────────────────────── */
+footer {
+  margin-top: 6rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--light);
+  color: var(--gray);
+  font-size: 0.9em;
+}
+
+/* ── Mobile ───────────────────────────────────────── */
+@media (max-width: 480px) {
+  :root {
+    --pad: 1.25rem;
+  }
+
+  .project {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .project-meta {
+    margin-left: 0;
+  }
+}
