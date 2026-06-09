@@ -5,60 +5,678 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Logan Sturrock</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+
+    /* ── Reset ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #111111;
+      --gray:  #888888;
+      --light: #cccccc;
+      --bg:    #ffffff;
+      --font:  'Courier New', Courier, monospace;
+      --col-right: 200px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      font-size: 13px;
+      background: var(--bg);
+      color: var(--black);
+      overflow: hidden;
+    }
+
+    /* ════════════════════════════════════════
+       DESKTOP LAYOUT
+    ════════════════════════════════════════ */
+
+    .desktop {
+      display: grid;
+      grid-template-columns: 1fr var(--col-right);
+      grid-template-rows: 1fr 1fr;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Left/main area — spans both rows */
+    .main-area {
+      grid-column: 1;
+      grid-row: 1 / 3;
+      position: relative;
+      overflow: hidden;
+      border-right: 1px solid var(--light);
+    }
+
+    /* Right top — name block */
+    .name-block {
+      grid-column: 2;
+      grid-row: 1;
+      border-bottom: 1px solid var(--light);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 1.5rem;
+    }
+
+    .name-block h1 {
+      font-size: 0.85rem;
+      font-weight: bold;
+      letter-spacing: 0.02em;
+      line-height: 1.4;
+    }
+
+    .name-block p {
+      color: var(--gray);
+      margin-top: 0.25rem;
+      font-size: 0.8rem;
+    }
+
+    /* Right bottom — menu block */
+    .menu-block {
+      grid-column: 2;
+      grid-row: 2;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 0.75rem;
+    }
+
+    /* ── Menu ─────────────────────────────────────────── */
+    .menu-group { }
+
+    .menu-toggle {
+      background: none;
+      border: none;
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--gray);
+      cursor: pointer;
+      padding: 0;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      width: 100%;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 11px;
+    }
+
+    .menu-toggle:hover { color: var(--black); }
+
+    .menu-toggle .arrow {
+      display: inline-block;
+      transition: transform 0.2s ease;
+      font-style: normal;
+    }
+
+    .menu-group.open .arrow { transform: rotate(90deg); }
+
+    .menu-items {
+      display: none;
+      padding-top: 0.4rem;
+      padding-left: 0.5rem;
+    }
+
+    .menu-group.open .menu-items { display: block; }
+
+    .menu-items a,
+    .menu-items button {
+      display: block;
+      background: none;
+      border: none;
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--black);
+      cursor: pointer;
+      padding: 0.2rem 0;
+      text-decoration: none;
+      text-align: left;
+      width: 100%;
+      border-bottom: none;
+    }
+
+    .menu-items a:hover,
+    .menu-items button:hover { color: var(--gray); }
+
+    .menu-items button.active { text-decoration: underline; }
+
+    /* ── Display / Main Area states ──────────────────── */
+
+    /* Default: featured display box */
+    .display-box {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f4f4f4;
+      transition: opacity 0.3s ease;
+    }
+
+    .display-box img,
+    .display-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .display-box .placeholder-text {
+      color: var(--light);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    /* Project grid */
+    .project-view {
+      position: absolute;
+      inset: 0;
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 2px;
+      background: var(--light);
+    }
+
+    .project-view.active {
+      display: grid;
+    }
+
+    .grid-cell {
+      background: #f4f4f4;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .grid-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.2s ease;
+    }
+
+    .grid-cell:hover img { opacity: 0.9; }
+
+    .grid-cell.empty {
+      background: #ebebeb;
+      cursor: default;
+    }
+
+    /* ── Info panels ──────────────────────────────────── */
+    .info-panel {
+      position: absolute;
+      inset: 0;
+      display: none;
+      padding: 3rem;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .info-panel.active { display: flex; }
+
+    .info-panel h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gray);
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--light);
+      padding-bottom: 0.5rem;
+    }
+
+    .info-panel p {
+      max-width: 480px;
+      line-height: 1.8;
+      margin-bottom: 1rem;
+    }
+
+    .info-panel a {
+      color: var(--black);
+      border-bottom: 1px solid var(--light);
+      text-decoration: none;
+    }
+
+    .info-panel a:hover { border-color: var(--black); }
+
+    /* ════════════════════════════════════════
+       MOBILE LAYOUT
+    ════════════════════════════════════════ */
+
+    .mobile { display: none; }
+
+    @media (max-width: 768px) {
+      html, body { overflow: auto; }
+
+      .desktop { display: none; }
+
+      .mobile {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      .mobile-content {
+        flex: 1;
+        min-height: 60vw;
+        background: #f4f4f4;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .mobile-content img,
+      .mobile-content video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .mobile-grid {
+        display: none;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2px;
+        background: var(--light);
+        min-height: 60vw;
+      }
+
+      .mobile-grid.active { display: grid; }
+      .mobile-content-default { display: block; }
+      .mobile-content-default.hidden { display: none; }
+
+      .mobile-cell {
+        background: #f4f4f4;
+        aspect-ratio: 1;
+        overflow: hidden;
+        cursor: pointer;
+      }
+
+      .mobile-cell img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .mobile-nav {
+        padding: 1.5rem;
+        border-top: 1px solid var(--light);
+      }
+
+      .mobile-name {
+        font-weight: bold;
+        margin-bottom: 1.5rem;
+      }
+
+      .mobile-name span {
+        display: block;
+        color: var(--gray);
+        font-weight: normal;
+        font-size: 0.9em;
+        margin-top: 0.15rem;
+      }
+
+      .mobile-menu-group {
+        margin-bottom: 0.75rem;
+      }
+
+      .mobile-menu-toggle {
+        background: none;
+        border: none;
+        font-family: var(--font);
+        font-size: 11px;
+        color: var(--gray);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .mobile-menu-toggle .arrow {
+        display: inline-block;
+        transition: transform 0.2s ease;
+      }
+
+      .mobile-menu-group.open .arrow { transform: rotate(90deg); }
+
+      .mobile-menu-items {
+        display: none;
+        padding: 0.4rem 0 0 0.5rem;
+      }
+
+      .mobile-menu-group.open .mobile-menu-items { display: block; }
+
+      .mobile-menu-items a,
+      .mobile-menu-items button {
+        display: block;
+        background: none;
+        border: none;
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--black);
+        cursor: pointer;
+        padding: 0.25rem 0;
+        text-decoration: none;
+        text-align: left;
+        width: 100%;
+      }
+
+      /* Floating back bar */
+      .mobile-back-bar {
+        display: none;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg);
+        border-top: 1px solid var(--light);
+        padding: 0.75rem 1.5rem;
+        z-index: 50;
+      }
+
+      .mobile-back-bar.visible { display: flex; align-items: center; }
+
+      .mobile-back-btn {
+        background: none;
+        border: none;
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--gray);
+        cursor: pointer;
+        padding: 0;
+      }
+
+      .mobile-back-btn:hover { color: var(--black); }
+
+      .mobile-info {
+        display: none;
+        padding: 2rem 1.5rem;
+      }
+
+      .mobile-info.active { display: block; }
+
+      .mobile-info h2 {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--gray);
+        margin-bottom: 1rem;
+        border-bottom: 1px solid var(--light);
+        padding-bottom: 0.5rem;
+      }
+
+      .mobile-info p { line-height: 1.8; margin-bottom: 1rem; }
+      .mobile-info a { color: var(--black); }
+    }
+
+  </style>
 </head>
 <body>
 
-  <header>
-    <nav>
-      <span class="site-name">Logan Sturrock</span>
-      <span class="nav-links">
-        <!-- <a href="#work">work</a> : <a href="#about">about</a> : <a href="#contact">contact</a> -->
-      </span>
-    </nav>
-  </header>
+  <!-- ════════════════════════════════════════
+       DESKTOP
+  ════════════════════════════════════════ -->
+  <div class="desktop">
 
-  <main>
+    <!-- Main display area -->
+    <div class="main-area">
 
-    <section id="hero">
-      <!-- <h1>Logan Sturrock</h1>-->
-      <!-- <p class="tagline">[ tagline ]</p> -->
-    </section>
+      <!-- Default featured display -->
+      <div class="display-box" id="display-default">
+        <!-- 
+          TO CHANGE THE FEATURED DISPLAY:
+          For an image: <img src="images/your-image.jpg" alt="">
+          For a video:  <video src="images/your-video.mp4" autoplay muted loop playsinline></video>
+          For a gif:    <img src="images/your-gif.gif" alt="">
+        -->
+        <span class="placeholder-text">[ featured display ]</span>
+      </div>
 
-    <section id="work">
-      <h2>Work</h2>
-      <ul class="project-list">
-        <li class="project">
-          <span class="project-title">Client Projects</span>
-          <span class="project-meta">Graphic Design, Branding</span>
-        </li>
-        <li class="project">
-          <span class="project-title">Personal Projects</span>
-          <span class="project-meta">Audio Visual</span>
-        </li>
-        <!-- <li class="project">
-          <span class="project-title"Print</span>
-          <span class="project-meta">Definition</span>
-        </li> -->
-            </ul>
-    </section>
+      <!-- Project grids — one per project -->
+      <!-- 
+        TO ADD A NEW PROJECT:
+        1. Copy this entire project-view div
+        2. Give it a new id (e.g. id="project-2")
+        3. Add images to each grid-cell
+        4. Add a matching button in the menu below
+      -->
+      <div class="project-view" id="project-k7">
+        <!-- 6 cells for a 3x2 grid. Add your images below. -->
+        <!-- Clicking cycles through images in that cell -->
+        <div class="grid-cell" data-images='["images/k7-1.jpg","images/k7-2.jpg","images/k7-3.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-1.jpg" alt="K7" onerror="this.parentElement.classList.add('empty');this.remove()">
+        </div>
+        <div class="grid-cell" data-images='["images/k7-4.jpg","images/k7-5.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-4.jpg" alt="K7" onerror="this.parentElement.classList.add('empty');this.remove()">
+        </div>
+        <div class="grid-cell" data-images='["images/k7-6.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-6.jpg" alt="K7" onerror="this.parentElement.classList.add('empty');this.remove()">
+        </div>
+        <div class="grid-cell" data-images='["images/k7-7.jpg","images/k7-8.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-7.jpg" alt="K7" onerror="this.parentElement.classList.add('empty');this.remove()">
+        </div>
+        <div class="grid-cell" data-images='["images/k7-9.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-9.jpg" alt="K7" onerror="this.parentElement.classList.add('empty');this.remove()">
+        </div>
+        <div class="grid-cell" data-images='["images/k7-10.jpg","images/k7-11.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-10.jpg" alt="K7" onerror="this.parentElement.classList.add('empty');this.remove()">
+        </div>
+      </div>
 
-    <section id="about">
-      <h2>About</h2>
-      <p>[ A short paragraph about you goes here. Who you are, what you do, what you care about. Keep it short. ]</p>
-    </section>
+      <!-- About panel -->
+      <div class="info-panel" id="panel-about">
+        <h2>About</h2>
+        <p>[ A short paragraph about you goes here. Who you are, what you do, what you care about. ]</p>
+      </div>
 
-    <section id="contact">
-      <h2>Contact</h2>
-      <p>
-        <a href="mailto:hello@yourdomain.com">logansturrock at gmail dot com</a>
-      </p>
-    </section>
+      <!-- Contact panel -->
+      <div class="info-panel" id="panel-contact">
+        <h2>Contact</h2>
+        <p><a href="mailto:hello@logansturrock.com">hello@logansturrock.com</a></p>
+      </div>
 
-  </main>
+    </div>
 
-  <footer>
-    <p>Logan Sturrock · [ Berlin ] · [ 2026 ]</p>
-  </footer>
+    <!-- Right top: name -->
+    <div class="name-block">
+      <h1>Logan Sturrock</h1>
+      <p>[ tagline ]</p>
+    </div>
+
+    <!-- Right bottom: menu -->
+    <div class="menu-block">
+
+      <!-- Projects menu group -->
+      <div class="menu-group" id="group-projects">
+        <button class="menu-toggle" onclick="toggleGroup('group-projects')">
+          <span class="arrow">›</span> Projects
+        </button>
+        <div class="menu-items">
+          <!-- Add project buttons here. id must match the project-view id above -->
+          <button onclick="showProject('project-k7', this)">K7</button>
+          <!-- <button onclick="showProject('project-2', this)">Project 2</button> -->
+        </div>
+      </div>
+
+      <!-- Info menu group -->
+      <div class="menu-group" id="group-info">
+        <button class="menu-toggle" onclick="toggleGroup('group-info')">
+          <span class="arrow">›</span> Info
+        </button>
+        <div class="menu-items">
+          <button onclick="showPanel('panel-about', this)">About</button>
+          <button onclick="showPanel('panel-contact', this)">Contact</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════
+       MOBILE
+  ════════════════════════════════════════ -->
+  <div class="mobile">
+
+    <div class="mobile-content">
+      <div class="mobile-content-default" id="m-display-default">
+        <!-- Same as desktop featured display — update both -->
+        <div style="width:100%;height:100%;min-height:60vw;background:#f4f4f4;display:flex;align-items:center;justify-content:center;">
+          <span style="color:var(--light);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">[ featured display ]</span>
+        </div>
+      </div>
+      <div class="mobile-grid" id="m-project-k7">
+        <div class="mobile-cell" data-images='["images/k7-1.jpg","images/k7-2.jpg","images/k7-3.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-1.jpg" alt="K7" onerror="this.remove()">
+        </div>
+        <div class="mobile-cell" data-images='["images/k7-4.jpg","images/k7-5.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-4.jpg" alt="K7" onerror="this.remove()">
+        </div>
+        <div class="mobile-cell" data-images='["images/k7-6.jpg","images/k7-7.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-6.jpg" alt="K7" onerror="this.remove()">
+        </div>
+        <div class="mobile-cell" data-images='["images/k7-8.jpg","images/k7-9.jpg"]' onclick="cycleImage(this)">
+          <img src="images/k7-8.jpg" alt="K7" onerror="this.remove()">
+        </div>
+      </div>
+      <div class="mobile-info" id="m-panel-about">
+        <h2>About</h2>
+        <p>[ A short paragraph about you goes here. ]</p>
+      </div>
+      <div class="mobile-info" id="m-panel-contact">
+        <h2>Contact</h2>
+        <p><a href="mailto:hello@logansturrock.com">hello@logansturrock.com</a></p>
+      </div>
+    </div>
+
+    <div class="mobile-nav">
+      <div class="mobile-name">
+        Logan Sturrock
+        <span>[ tagline ]</span>
+      </div>
+
+      <div class="mobile-menu-group" id="m-group-projects">
+        <button class="mobile-menu-toggle" onclick="mToggleGroup('m-group-projects')">
+          <span class="arrow">›</span> Projects
+        </button>
+        <div class="mobile-menu-items">
+          <button onclick="mShowProject('m-project-k7', this)">K7</button>
+        </div>
+      </div>
+
+      <div class="mobile-menu-group" id="m-group-info">
+        <button class="mobile-menu-toggle" onclick="mToggleGroup('m-group-info')">
+          <span class="arrow">›</span> Info
+        </button>
+        <div class="mobile-menu-items">
+          <button onclick="mShowPanel('m-panel-about', this)">About</button>
+          <button onclick="mShowPanel('m-panel-contact', this)">Contact</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating back bar -->
+    <div class="mobile-back-bar" id="mobile-back-bar">
+      <button class="mobile-back-btn" onclick="mGoBack()">← back</button>
+    </div>
+
+  </div>
+
+
+  <script>
+
+    // ── Image cycling ──────────────────────────────────
+    function cycleImage(cell) {
+      const images = JSON.parse(cell.dataset.images || '[]');
+      if (images.length <= 1) return;
+      let idx = parseInt(cell.dataset.idx || '0');
+      idx = (idx + 1) % images.length;
+      cell.dataset.idx = idx;
+      const img = cell.querySelector('img');
+      if (img) img.src = images[idx];
+    }
+
+    // ── Desktop: menu toggle ───────────────────────────
+    function toggleGroup(id) {
+      document.getElementById(id).classList.toggle('open');
+    }
+
+    // ── Desktop: show project ──────────────────────────
+    let activeProjectBtn = null;
+    let activePanelBtn = null;
+
+    function showProject(id, btn) {
+      hideAll();
+      document.getElementById(id).classList.add('active');
+      if (activeProjectBtn) activeProjectBtn.classList.remove('active');
+      activeProjectBtn = btn;
+      btn.classList.add('active');
+    }
+
+    function showPanel(id, btn) {
+      hideAll();
+      document.getElementById(id).classList.add('active');
+      if (activePanelBtn) activePanelBtn.classList.remove('active');
+      activePanelBtn = btn;
+      btn.classList.add('active');
+    }
+
+    function hideAll() {
+      document.querySelectorAll('.project-view, .info-panel').forEach(el => el.classList.remove('active'));
+      document.getElementById('display-default').style.display = 'none';
+      if (activeProjectBtn) activeProjectBtn.classList.remove('active');
+      if (activePanelBtn) activePanelBtn.classList.remove('active');
+    }
+
+    // ── Mobile: menu toggle ────────────────────────────
+    function mToggleGroup(id) {
+      document.getElementById(id).classList.toggle('open');
+    }
+
+    // ── Mobile: show project ───────────────────────────
+    function mShowProject(id, btn) {
+      mHideAll();
+      document.getElementById(id).classList.add('active');
+      showMobileBack();
+    }
+
+    function mShowPanel(id, btn) {
+      mHideAll();
+      document.getElementById(id).classList.add('active');
+      showMobileBack();
+    }
+
+    function mHideAll() {
+      document.querySelectorAll('.mobile-grid, .mobile-info').forEach(el => el.classList.remove('active'));
+      const def = document.getElementById('m-display-default');
+      if (def) def.classList.add('hidden');
+    }
+
+    function mGoBack() {
+      mHideAll();
+      document.getElementById('m-display-default').classList.remove('hidden');
+      hideMobileBack();
+    }
+
+    function showMobileBack() {
+      document.getElementById('mobile-back-bar').classList.add('visible');
+    }
+
+    function hideMobileBack() {
+      document.getElementById('mobile-back-bar').classList.remove('visible');
+    }
+
+  </script>
 
 </body>
 </html>
