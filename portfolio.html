@@ -266,10 +266,16 @@
 
       .mobile-content {
         flex: 1;
-        min-height: 60vw;
+        min-height: 400px;
         background: #f4f4f4;
         position: relative;
         overflow: hidden;
+      }
+
+      .mobile-content-default {
+        width: 100%;
+        height: 100%;
+        display: block;
       }
 
       .mobile-content img,
@@ -277,6 +283,7 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        display: block;
       }
 
       .mobile-grid {
@@ -531,9 +538,7 @@
     <div class="mobile-content">
       <div class="mobile-content-default" id="m-display-default">
         <!-- Same as desktop featured display — update both -->
-        <div style="width:100%;height:100%;min-height:60vw;background:#f4f4f4;display:flex;align-items:center;justify-content:center;">
-          <span style="color:var(--light);font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">[ featured display ]</span>
-        </div>
+        <img src="images/featured.jpg" alt="" style="width:100%;height:100%;min-height:60vw;object-fit:cover;display:block;">
       </div>
       <div class="mobile-grid" id="m-project-k7">
         <div class="mobile-cell" data-images='["images/k7-1.jpg","images/k7-2.jpg","images/k7-3.jpg"]' onclick="cycleImage(this)">
