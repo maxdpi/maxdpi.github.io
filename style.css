@@ -1,9 +1,10 @@
 @font-face {
-  font-family: 'GT Pressura';
+  font-family: 'GT Pressura Mono';
   src: url('fonts/GT-Pressura-Mono-Regular.woff2') format('woff2'),
        url('fonts/GT-Pressura-Mono-Regular.woff') format('woff');
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 /* ── Portfolio layout overrides ──────────────────── */
 body {
