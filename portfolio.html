@@ -454,7 +454,7 @@
     </div>
 
     <div class="name-block">
-      <h1><a href="index.html">Logan Sturrock</a></h1>
+      <h1><a href="#" onclick="goHome(); return false;">Logan Sturrock</a></h1>
       <p></p>
     </div>
 
@@ -506,7 +506,7 @@
 
     <div class="mobile-nav">
       <div class="mobile-name">
-        <a href="index.html">Logan Sturrock</a>
+        <a href="#" onclick="goHome(); return false;">Logan Sturrock</a>
         <span>[ tagline ]</span>
       </div>
 
@@ -590,6 +590,12 @@
       if (activeProjectBtn) activeProjectBtn.classList.remove('active');
       if (activePanelBtn) activePanelBtn.classList.remove('active');
       activeProject = null;
+    }
+
+    function goHome() {
+      hideAll();
+      document.getElementById('display-default').classList.add('active');
+      mGoBack();
     }
 
     // ── Desktop: menu toggles ──────────────────────────
