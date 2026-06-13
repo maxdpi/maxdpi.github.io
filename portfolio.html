@@ -405,7 +405,17 @@
           'images/k7/02.jpg',
           'images/k7/03.jpg',
           'images/k7/04.jpg',
-          'images/k7/05.jpg'
+          'images/k7/05.jpg',
+          'images/k7/06.jpg',
+          'images/k7/07.jpg',
+          'images/k7/08.jpg',
+          'images/k7/09.jpg',
+          'images/k7/10.jpg',
+          'images/k7/11.jpg',
+          'images/k7/12.jpg',
+          'images/k7/13.jpg',
+          'images/k7/14.jpg',
+          'images/k7/15.jpg',
           // add more: 'images/k7/06.png',
         ]
       }
@@ -548,15 +558,35 @@
     let mobileActiveProject = null;
     let mobileIsFeatured = true;
 
-    // ── Desktop: cycle images on click ────────────────
-    function cycleProject(id) {
+    // ── Desktop: step through images (dir = +1 / -1) ──
+    function stepProject(id, dir) {
       const images = PROJECTS[id] && PROJECTS[id].images;
       if (!images || images.length === 0) return;
-      projectIdx[id] = ((projectIdx[id] || 0) + 1) % images.length;
+      projectIdx[id] = ((projectIdx[id] || 0) + dir + images.length) % images.length;
       document.getElementById(id + '-img').src = images[projectIdx[id]];
       document.getElementById(id + '-counter').textContent =
         (projectIdx[id] + 1) + ' / ' + images.length;
     }
+
+    // ── Desktop: cycle images on click ────────────────
+    function cycleProject(id) {
+      stepProject(id, 1);
+    }
+
+    // ── Keyboard: left / right arrows navigate active project ──
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      // Desktop active project, or mobile active project
+      const id = activeProject || (!mobileIsFeatured && mobileActiveProject);
+      if (!id) return;
+      e.preventDefault();
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      if (activeProject) {
+        stepProject(id, dir);
+      } else {
+        mStepProject(id, dir);
+      }
+    });
 
     // ── Desktop: show project ──────────────────────────
     function showProject(id, btn) {
@@ -603,13 +633,18 @@
       document.getElementById(id).classList.toggle('open');
     }
 
+    // ── Mobile: step through images (dir = +1 / -1) ───
+    function mStepProject(id, dir) {
+      const images = PROJECTS[id] && PROJECTS[id].images;
+      if (!images || images.length === 0) return;
+      projectIdx[id] = ((projectIdx[id] || 0) + dir + images.length) % images.length;
+      document.getElementById('mobile-img').src = images[projectIdx[id]];
+    }
+
     // ── Mobile: cycle images on tap ───────────────────
     function mobileCycle() {
       if (!mobileActiveProject || mobileIsFeatured) return;
-      const images = PROJECTS[mobileActiveProject] && PROJECTS[mobileActiveProject].images;
-      if (!images || images.length === 0) return;
-      projectIdx[mobileActiveProject] = ((projectIdx[mobileActiveProject] || 0) + 1) % images.length;
-      document.getElementById('mobile-img').src = images[projectIdx[mobileActiveProject]];
+      mStepProject(mobileActiveProject, 1);
     }
 
     function mShowProject(id, btn) {
