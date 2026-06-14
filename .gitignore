@@ -1,1 +1,14 @@
 .DS_Store
+
+# Node / Sanity Studio (studio-portfolio has its own .gitignore too)
+node_modules/
+studio-portfolio/dist/
+studio-portfolio/.sanity/
+
+# Env files — never commit tokens/secrets
+.env
+.env.*
+!.env.example
+
+# Installed agent skills (sanity-best-practices, etc.)
+.agents/

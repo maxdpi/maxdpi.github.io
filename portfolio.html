@@ -669,7 +669,7 @@
 
     function mShowPanel(id, btn) {
       mHideInfoPanels();
-      document.getElementById('mobile-img').src = 'images/featured.jpg';
+      document.getElementById('mobile-img').src = window.SITE_FEATURED || 'images/featured.jpg';
       document.getElementById(id).classList.add('active');
       mobileIsFeatured = true;
       mobileActiveProject = null;
@@ -682,7 +682,7 @@
 
     function mGoBack() {
       mHideInfoPanels();
-      document.getElementById('mobile-img').src = 'images/featured.jpg';
+      document.getElementById('mobile-img').src = window.SITE_FEATURED || 'images/featured.jpg';
       document.getElementById('mobile-img').style.display = 'block';
       mobileIsFeatured = true;
       mobileActiveProject = null;
@@ -701,6 +701,186 @@
       document.getElementById('mobile-back-bar').classList.remove('visible');
     }
 
+  </script>
+
+
+  <!-- ════════════════════════════════════════════════
+       SANITY — fetch & render projects from the CMS.
+       Progressive enhancement: if the CMS responds, it
+       replaces the static project list above. If the
+       request fails, the hardcoded projects remain.
+       Public, published content only — no token.
+  ════════════════════════════════════════════════ -->
+  <script>
+    (function () {
+      const SANITY = {
+        projectId: 'aiajifvh',
+        dataset: 'production',
+        apiVersion: 'v2024-01-01',
+      };
+
+      // GROQ: published projects, in menu order.
+      const QUERY =
+        '*[_type=="project" && !(_id in path("drafts.**"))]|order(order asc,_createdAt asc)' +
+        '{_id,title,"slug":slug.current,"mainRef":mainImage.asset._ref,' +
+        '"gallery":gallery[]{"ref":asset._ref,alt}}';
+
+      const apiUrl =
+        'https://' + SANITY.projectId + '.apicdn.sanity.io/' + SANITY.apiVersion +
+        '/data/query/' + SANITY.dataset + '?query=' + encodeURIComponent(QUERY);
+
+      // Build a CDN image URL from a Sanity asset ref:
+      //   image-<assetId>-<w>x<h>-<ext>  ->  .../<assetId>-<w>x<h>.<ext>
+      function urlFor(ref) {
+        if (!ref) return '';
+        const parts = ref.split('-'); // ['image', id, '1200x800', 'jpg']
+        if (parts.length < 4) return '';
+        const id = parts[1], dims = parts[2], ext = parts[3];
+        return 'https://cdn.sanity.io/images/' + SANITY.projectId + '/' + SANITY.dataset +
+          '/' + id + '-' + dims + '.' + ext + '?auto=format&fit=max&w=1600&q=80';
+      }
+
+      function render(projects) {
+        if (!projects || !projects.length) return; // keep static fallback
+
+        // Remove the static (hardcoded) project entries now that the CMS answered.
+        document.querySelectorAll('.main-area > .project-view').forEach((el) => el.remove());
+        const deskItems = document.querySelector('#group-projects .menu-items');
+        const mobItems = document.querySelector('#m-group-projects .mobile-menu-items');
+        if (deskItems) deskItems.innerHTML = '';
+        if (mobItems) mobItems.innerHTML = '';
+        const mainArea = document.querySelector('.main-area');
+
+        projects.forEach((p) => {
+          const id = 'project-' + (p.slug || p._id);
+          const gallery = (p.gallery || []).map((g) => urlFor(g.ref)).filter(Boolean);
+          const images = gallery.length ? gallery : [urlFor(p.mainRef)].filter(Boolean);
+          if (!images.length) return;
+
+          // Register in the shared PROJECTS map used by the existing functions.
+          PROJECTS[id] = { images: images };
+
+          // Desktop: project-view panel (full-bleed, click to advance).
+          const view = document.createElement('div');
+          view.className = 'project-view';
+          view.id = id;
+          view.addEventListener('click', () => cycleProject(id));
+          const img = document.createElement('img');
+          img.id = id + '-img';
+          img.alt = p.title || '';
+          const counter = document.createElement('div');
+          counter.className = 'project-counter';
+          counter.id = id + '-counter';
+          view.appendChild(img);
+          view.appendChild(counter);
+          if (mainArea) mainArea.appendChild(view);
+
+          // Desktop: menu button.
+          if (deskItems) {
+            const btn = document.createElement('button');
+            btn.textContent = p.title || id;
+            btn.addEventListener('click', () => showProject(id, btn));
+            deskItems.appendChild(btn);
+          }
+
+          // Mobile: menu button.
+          if (mobItems) {
+            const mbtn = document.createElement('button');
+            mbtn.textContent = p.title || id;
+            mbtn.addEventListener('click', () => mShowProject(id, mbtn));
+            mobItems.appendChild(mbtn);
+          }
+        });
+      }
+
+      function queryUrl(groq) {
+        return 'https://' + SANITY.projectId + '.apicdn.sanity.io/' + SANITY.apiVersion +
+          '/data/query/' + SANITY.dataset + '?query=' + encodeURIComponent(groq);
+      }
+
+      fetch(apiUrl)
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+        .then((data) => render(data && data.result))
+        .catch((err) => console.warn('[sanity] project fetch failed, using static fallback:', err));
+
+      // ── Site Settings (featured image, name, tagline, about, contact) ──
+      // Each field is applied only when present; otherwise the static
+      // placeholder in the markup remains untouched.
+      const SETTINGS_QUERY =
+        '*[_id=="siteSettings"][0]{name,tagline,email,' +
+        '"featuredRef":featuredImage.asset._ref,about}';
+
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, (c) => (
+          {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]
+        ));
+      }
+
+      // Minimal Portable Text → HTML (plain paragraphs).
+      function ptToHtml(blocks) {
+        return (blocks || [])
+          .filter((b) => b && b._type === 'block')
+          .map((b) => '<p>' + escapeHtml((b.children || []).map((c) => c.text || '').join('')) + '</p>')
+          .join('');
+      }
+
+      // Replace a panel's body (the <p> after its <h2>) with new HTML.
+      function setPanelBody(id, html) {
+        const el = document.getElementById(id);
+        if (!el || !html) return;
+        el.querySelectorAll('p').forEach((p) => p.remove());
+        el.insertAdjacentHTML('beforeend', html);
+      }
+
+      function renderSettings(s) {
+        if (!s) return;
+
+        // Featured (home) image — desktop + mobile, and the mobile revert target.
+        const featSrc = urlFor(s.featuredRef);
+        if (featSrc) {
+          window.SITE_FEATURED = featSrc;
+          const deskImg = document.querySelector('#display-default img');
+          if (deskImg) { deskImg.src = featSrc; deskImg.style.display = ''; }
+          const mobImg = document.getElementById('mobile-img');
+          if (mobImg) mobImg.src = featSrc;
+        }
+
+        // Name.
+        if (s.name) {
+          const dn = document.querySelector('.name-block h1 a');
+          if (dn) dn.textContent = s.name;
+          const mn = document.querySelector('.mobile-name a');
+          if (mn) mn.textContent = s.name;
+        }
+
+        // Tagline.
+        if (s.tagline) {
+          document.querySelectorAll('.name-block p').forEach((p) => (p.textContent = s.tagline));
+          const mspan = document.querySelector('.mobile-name span');
+          if (mspan) mspan.textContent = s.tagline;
+        }
+
+        // About (portable text).
+        const aboutHtml = ptToHtml(s.about);
+        if (aboutHtml) {
+          setPanelBody('panel-about', aboutHtml);
+          setPanelBody('m-panel-about', aboutHtml);
+        }
+
+        // Contact email.
+        if (s.email) {
+          const link = '<p><a href="mailto:' + encodeURIComponent(s.email).replace(/%40/g, '@') +
+            '">' + escapeHtml(s.email) + '</a></p>';
+          setPanelBody('panel-contact', link);
+          setPanelBody('m-panel-contact', link);
+        }
+      }
+
+      fetch(queryUrl(SETTINGS_QUERY))
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+        .then((data) => renderSettings(data && data.result))
+        .catch((err) => console.warn('[sanity] settings fetch failed, using static fallback:', err));
+    })();
   </script>
 
 </body>

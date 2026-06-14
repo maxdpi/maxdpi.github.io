@@ -1,0 +1,15 @@
+{
+  "name": "logansturrock-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Dev tooling for the logansturrock.com static site + Sanity Studio. Not used for the production deploy (the site ships as plain static files).",
+  "scripts": {
+    "dev": "concurrently -k -n site,studio -c green,magenta \"npm:dev:site\" \"npm:dev:studio\"",
+    "dev:site": "http-server . -p 8000 -c-1 --silent",
+    "dev:studio": "npm --prefix studio-portfolio run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "http-server": "^14.1.1"
+  }
+}
