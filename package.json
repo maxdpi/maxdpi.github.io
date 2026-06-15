@@ -11,5 +11,8 @@
   "devDependencies": {
     "concurrently": "^9.1.0",
     "http-server": "^14.1.1"
+  },
+  "overrides": {
+    "shell-quote": "^1.8.4"
   }
 }
