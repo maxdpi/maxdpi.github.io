@@ -387,29 +387,6 @@
         width: 100%;
       }
 
-      .mobile-back-bar {
-        display: none;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: var(--bg);
-        border-top: 1px solid var(--light);
-        padding: 0.75rem 1.5rem;
-        z-index: 50;
-      }
-
-      .mobile-back-bar.visible { display: flex; }
-
-      .mobile-back-btn {
-        background: none;
-        border: none;
-        font-family: var(--font);
-        font-size: 13px;
-        color: var(--gray);
-        cursor: pointer;
-        padding: 0;
-      }
     }
 
   </style>
@@ -572,10 +549,6 @@
       </div>
     </div>
 
-    <div class="mobile-back-bar" id="mobile-back-bar">
-      <button class="mobile-back-btn" onclick="mGoBack()">← back</button>
-    </div>
-
   </div>
 
 
@@ -731,7 +704,6 @@
       );
       mobileActiveProject = id;
       mobileIsFeatured = false;
-      showMobileBack();
     }
 
     function mShowPanel(id, btn) {
@@ -740,7 +712,6 @@
       document.getElementById(id).classList.add('active');
       mobileIsFeatured = true;
       mobileActiveProject = null;
-      showMobileBack();
     }
 
     function mHideInfoPanels() {
@@ -752,19 +723,10 @@
       mShowFeatured();
       mobileIsFeatured = true;
       mobileActiveProject = null;
-      hideMobileBack();
     }
 
     function mToggleGroup(id) {
       document.getElementById(id).classList.toggle('open');
-    }
-
-    function showMobileBack() {
-      document.getElementById('mobile-back-bar').classList.add('visible');
-    }
-
-    function hideMobileBack() {
-      document.getElementById('mobile-back-bar').classList.remove('visible');
     }
 
     // Navigation is now native vertical scrolling (wheel / trackpad / touch),
