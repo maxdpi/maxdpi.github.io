@@ -47,6 +47,27 @@ export const siteSettings = defineType({
       type: 'string',
       validation: (rule) => rule.email(),
     }),
+    defineField({
+      name: 'passwordEnabled',
+      title: 'Enable password protection',
+      type: 'boolean',
+      description:
+        'When ON, visitors must enter the site password on the home page. ' +
+        'When OFF, the home page goes straight to the portfolio.',
+      initialValue: true,
+      options: {layout: 'switch'},
+    }),
+    defineField({
+      name: 'sitePassword',
+      title: 'Site password',
+      type: 'string',
+      description:
+        'Password for the entry gate on the home page. ⚠️ Soft gate only — it is ' +
+        'sent to the browser over the public API and can be read by anyone technical, ' +
+        'so do NOT reuse a real/important password here. Leave empty to fall back to ' +
+        'the password hardcoded in index.html.',
+      hidden: ({document}) => document?.passwordEnabled === false,
+    }),
   ],
   preview: {
     prepare() {

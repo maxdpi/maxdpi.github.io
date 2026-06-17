@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Logan Sturrock</title>
   <style>
-    /* ── To change the password, edit the value in the script below ── */
+    /* ── Password is managed in Sanity → Site Settings → "Site password".
+         The constant below is only a fallback if the CMS is unreachable. ── */
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -84,23 +85,70 @@
 </head>
 <body>
 
-  <div class="wrap">
+  <!-- Hidden until we know whether password protection is on (avoids a flash
+       of the prompt before redirecting when protection is off). -->
+  <div class="wrap" id="gate" style="display:none">
     <h1>Logan Sturrock</h1>
     <p>enter password to continue</p>
-    <input type="password" id="pw" autofocus placeholder="········" />
+    <input type="password" id="pw" placeholder="········" />
   </div>
 
   <script>
-    // ── Change your password here ──────────────────────
-    const PASSWORD = "OpenSesame";
-    // ──────────────────────────────────────────────────
+    // ── Entry gate ─────────────────────────────────────
+    // Controlled from Sanity → Site Settings:
+    //   • "Enable password protection" (on/off)
+    //   • "Site password"
+    // The fallbacks below apply only if the CMS can't be reached (offline, or a
+    // local origin not in Sanity's CORS list). If unreachable we stay protected.
+    // NOTE: soft gate only — the password reaches the browser in clear text and
+    // can be read by anyone technical. Don't use a sensitive password.
+    const FALLBACK_PASSWORD = "OpenSesame";
+    const FALLBACK_ENABLED = true;
 
+    let sitePassword = null;
+    let decided = false;
+
+    const gate = document.getElementById("gate");
     const input = document.getElementById("pw");
+
+    function enter() { window.location.replace("portfolio.html"); }
+
+    function showGate() {
+      if (decided) return;
+      decided = true;
+      gate.style.display = "";
+      input.focus();
+    }
+
+    (function init() {
+      const projectId = "aiajifvh", dataset = "production", apiVersion = "v2024-01-01";
+      const query = '*[_id=="siteSettings"][0]{passwordEnabled,sitePassword}';
+      const url = "https://" + projectId + ".apicdn.sanity.io/" + apiVersion +
+        "/data/query/" + dataset + "?query=" + encodeURIComponent(query);
+      // If the CMS is slow/unreachable, fall back to showing the gate.
+      const timer = setTimeout(showGate, 3000);
+      fetch(url)
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))))
+        .then((d) => {
+          clearTimeout(timer);
+          const s = (d && d.result) || {};
+          const enabled = typeof s.passwordEnabled === "boolean" ? s.passwordEnabled : FALLBACK_ENABLED;
+          if (!enabled) { enter(); return; }      // protection off → straight in
+          if (s.sitePassword) sitePassword = s.sitePassword;
+          showGate();
+        })
+        .catch((err) => {
+          clearTimeout(timer);
+          console.warn("[sanity] settings fetch failed, using fallback:", err);
+          showGate();                             // stay protected by default
+        });
+    })();
 
     input.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
-        if (input.value === PASSWORD) {
-          window.location.href = "portfolio.html";
+        const expected = sitePassword || FALLBACK_PASSWORD;
+        if (input.value === expected) {
+          enter();
         } else {
           input.value = "";
           input.classList.remove("shake");
