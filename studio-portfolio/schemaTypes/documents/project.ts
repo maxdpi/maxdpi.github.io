@@ -1,12 +1,14 @@
 import {defineType, defineField, defineArrayMember} from 'sanity'
 import {ImageIcon} from '@sanity/icons'
+import {GalleryImageInput} from '../../components/GalleryImageInput'
 
 /**
  * A single portfolio project (e.g. "K7", "Maar").
  *
  * Maps to the existing site: each project is a menu entry under "Projects"
- * and renders as a full-bleed, click-to-advance image gallery. `mainImage`
- * is the cover/featured frame; `gallery` is the sequence cycled on click.
+ * and renders as a vertical scroll gallery that loops endlessly. `mainImage`
+ * is the cover/featured frame; `gallery` is the sequence shown in order as
+ * you scroll, wrapping from the last image back to the first.
  */
 export const project = defineType({
   name: 'project',
@@ -54,11 +56,17 @@ export const project = defineType({
       name: 'gallery',
       title: 'Gallery',
       type: 'array',
-      description: 'Images cycled through on click, in order.',
+      description:
+        'Images shown in a vertical scroll gallery, in order. ' +
+        'The gallery loops, so after the last image it returns to the first. ' +
+        'Drag rows to reorder. To remove an image, click the ⋮ menu at the end ' +
+        'of its row and choose “Remove”, then Publish. (This only removes it ' +
+        'from this gallery; the file stays in the Media library.)',
       of: [
         defineArrayMember({
           type: 'image',
           options: {hotspot: true},
+          components: {input: GalleryImageInput},
           fields: [
             defineField({
               name: 'alt',
