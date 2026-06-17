@@ -18,6 +18,8 @@
       --bg:    #ffffff;
       --font:  'GT Pressura Mono', 'Courier New', monospace;
       --col-right: 200px;
+      /* Frame margin around each image in the scroll gallery — tweak freely. */
+      --frame-padding: 2.5rem;
     }
 
     html, body {
@@ -181,18 +183,41 @@
       letter-spacing: 0.1em;
     }
 
-    /* Project view — single full-bleed image, click to advance */
+    /* Project view — vertical scroll gallery, seamless infinite loop */
     .project-view {
       background: #f4f4f4;
-      cursor: pointer;
     }
 
-    .project-view img {
-      width: 100%;
+    /* The scrolling column. Images stack as full-height, snap-aligned slides. */
+    .scroll-track {
+      position: absolute;
+      inset: 0;
+      overflow-x: hidden;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;            /* Firefox */
+    }
+    .scroll-track::-webkit-scrollbar { display: none; }  /* WebKit */
+
+    /* One image per screen, framed against the background by --frame-padding. */
+    .scroll-track .slide {
       height: 100%;
-      object-fit: cover;
+      width: 100%;
+      scroll-snap-align: start;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--frame-padding);
+    }
+
+    .scroll-track .slide img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;            /* show true dimensions, no cropping */
       display: block;
-      pointer-events: none;
     }
 
     .project-counter {
@@ -200,8 +225,9 @@
       bottom: 1rem;
       right: 1rem;
       font-size: 11px;
-      color: rgba(255,255,255,0.6);
+      color: var(--gray);
       pointer-events: none;
+      z-index: 2;
     }
 
     /* Info panels */
@@ -255,9 +281,8 @@
         position: relative;
         background: #f4f4f4;
         width: 100%;
-        aspect-ratio: 1/1;
+        height: 78vh;
         overflow: hidden;
-        cursor: pointer;
       }
 
       .mobile-content img,
@@ -419,7 +444,6 @@
           'images/k7/15.jpg',
           'images/k7/16.jpg',
           'images/k7/17.jpg',
-          'images/k7/18.jpg',
 
 
 
@@ -451,9 +475,9 @@
         <div class="placeholder-text" style="display:none">[ featured display ]</div>
       </div>
 
-      <!-- Project view — one per project, id must match PROJECTS above -->
-      <div class="project-view" id="project-k7" onclick="cycleProject('project-k7')">
-        <img id="project-k7-img" src="" alt="">
+      <!-- Project view — vertical scroll gallery; built on open. id must match PROJECTS. -->
+      <div class="project-view" id="project-k7">
+        <div class="scroll-track" id="project-k7-track"></div>
         <div class="project-counter" id="project-k7-counter"></div>
       </div>
 
@@ -506,9 +530,9 @@
   ════════════════════════════════════════ -->
   <div class="mobile">
 
-    <div class="mobile-content" id="mobile-content" onclick="mobileCycle()">
-      <img id="mobile-img" src="images/featured.jpg" alt=""
-           onerror="this.style.display='none'">
+    <div class="mobile-content" id="mobile-content">
+      <div class="scroll-track" id="mobile-track"></div>
+      <div class="project-counter" id="mobile-counter"></div>
     </div>
 
     <div class="mobile-info-panel" id="m-panel-about">
@@ -558,54 +582,103 @@
   <script>
 
     // ── Project state ──────────────────────────────────
-    const projectIdx = {};
     let activeProject = null;
     let activeProjectBtn = null;
     let activePanelBtn = null;
     let mobileActiveProject = null;
     let mobileIsFeatured = true;
 
-    // ── Desktop: step through images (dir = +1 / -1) ──
-    function stepProject(id, dir) {
-      const images = PROJECTS[id] && PROJECTS[id].images;
-      if (!images || images.length === 0) return;
-      projectIdx[id] = ((projectIdx[id] || 0) + dir + images.length) % images.length;
-      document.getElementById(id + '-img').src = images[projectIdx[id]];
-      document.getElementById(id + '-counter').textContent =
-        (projectIdx[id] + 1) + ' / ' + images.length;
-    }
+    // ── Vertical scroll gallery with seamless infinite loop ──
+    // Lays out [clone(last), ...images, clone(first)] as full-height,
+    // snap-aligned slides. When the scroll settles on a clone it jumps to the
+    // matching real slide, so the gallery loops endlessly in both directions.
+    function buildScroller(track, counter, images) {
+      if (!track) return;
+      track.onscroll = null;
+      track.innerHTML = '';
+      if (!images || !images.length) { if (counter) counter.textContent = ''; return; }
+      const N = images.length;
 
-    // ── Desktop: cycle images on click ────────────────
-    function cycleProject(id) {
-      if (window.__swipeJustHappened) return; // ignore the click a swipe leaves behind
-      stepProject(id, 1);
-    }
-
-    // ── Keyboard: left / right arrows navigate active project ──
-    document.addEventListener('keydown', function (e) {
-      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-      // Desktop active project, or mobile active project
-      const id = activeProject || (!mobileIsFeatured && mobileActiveProject);
-      if (!id) return;
-      e.preventDefault();
-      const dir = e.key === 'ArrowRight' ? 1 : -1;
-      if (activeProject) {
-        stepProject(id, dir);
-      } else {
-        mStepProject(id, dir);
+      function slide(src) {
+        const s = document.createElement('div');
+        s.className = 'slide';
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = '';
+        img.loading = 'lazy';
+        s.appendChild(img);
+        return s;
       }
+
+      track.appendChild(slide(images[N - 1])); // buffer: clone of last
+      images.forEach((src) => track.appendChild(slide(src)));
+      track.appendChild(slide(images[0]));     // buffer: clone of first
+
+      function setCounter(raw) {
+        if (!counter) return;
+        const real = ((raw - 1) % N + N) % N;  // slide index → real image index
+        counter.textContent = (real + 1) + ' / ' + N;
+      }
+
+      // Start on the first real slide (index 1), once the track has a height.
+      (function init() {
+        const h = track.clientHeight;
+        if (!h) { requestAnimationFrame(init); return; }
+        track.scrollTop = h;
+        setCounter(1);
+      })();
+
+      let ticking = false;
+      track.onscroll = function () {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(function () {
+          const h = track.clientHeight || 1;
+          if (track.scrollTop <= 0) {
+            track.scrollTop = h * N;             // scrolled above first real → real last
+          } else if (track.scrollTop >= h * (N + 1)) {
+            track.scrollTop = h;                 // scrolled below last real → real first
+          }
+          setCounter(Math.round(track.scrollTop / h));
+          ticking = false;
+        });
+      };
+    }
+
+    // A single, non-looping slide (used for the featured / home image).
+    function buildSingle(track, src) {
+      if (!track) return;
+      track.onscroll = null;
+      track.innerHTML = '';
+      const s = document.createElement('div');
+      s.className = 'slide';
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = '';
+      img.onerror = function () { this.style.display = 'none'; };
+      s.appendChild(img);
+      track.appendChild(s);
+    }
+
+    // ── Keyboard: up / down arrows scroll the active gallery ──
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+      const track = activeProject
+        ? document.getElementById(activeProject + '-track')
+        : (!mobileIsFeatured ? document.getElementById('mobile-track') : null);
+      if (!track) return;
+      e.preventDefault();
+      track.scrollBy({ top: (e.key === 'ArrowDown' ? 1 : -1) * track.clientHeight, behavior: 'smooth' });
     });
 
     // ── Desktop: show project ──────────────────────────
     function showProject(id, btn) {
       hideAll();
-      const images = PROJECTS[id] && PROJECTS[id].images;
-      if (images && images.length > 0) {
-        projectIdx[id] = 0;
-        document.getElementById(id + '-img').src = images[0];
-        document.getElementById(id + '-counter').textContent =
-          '1 / ' + images.length;
-      }
+      buildScroller(
+        document.getElementById(id + '-track'),
+        document.getElementById(id + '-counter'),
+        PROJECTS[id] && PROJECTS[id].images
+      );
       document.getElementById(id).classList.add('active');
       if (activeProjectBtn) activeProjectBtn.classList.remove('active');
       activeProjectBtn = btn;
@@ -641,29 +714,21 @@
       document.getElementById(id).classList.toggle('open');
     }
 
-    // ── Mobile: step through images (dir = +1 / -1) ───
-    function mStepProject(id, dir) {
-      const images = PROJECTS[id] && PROJECTS[id].images;
-      if (!images || images.length === 0) return;
-      projectIdx[id] = ((projectIdx[id] || 0) + dir + images.length) % images.length;
-      document.getElementById('mobile-img').src = images[projectIdx[id]];
-    }
-
-    // ── Mobile: cycle images on tap ───────────────────
-    function mobileCycle() {
-      if (window.__swipeJustHappened) return; // ignore the click a swipe leaves behind
-      if (!mobileActiveProject || mobileIsFeatured) return;
-      mStepProject(mobileActiveProject, 1);
+    // ── Mobile: show the featured (home) image ────────
+    function mShowFeatured() {
+      buildSingle(document.getElementById('mobile-track'),
+                  window.SITE_FEATURED || 'images/featured.jpg');
+      const c = document.getElementById('mobile-counter');
+      if (c) c.textContent = '';
     }
 
     function mShowProject(id, btn) {
       mHideInfoPanels();
-      const images = PROJECTS[id] && PROJECTS[id].images;
-      if (images && images.length > 0) {
-        projectIdx[id] = 0;
-        document.getElementById('mobile-img').src = images[0];
-        document.getElementById('mobile-img').style.display = 'block';
-      }
+      buildScroller(
+        document.getElementById('mobile-track'),
+        document.getElementById('mobile-counter'),
+        PROJECTS[id] && PROJECTS[id].images
+      );
       mobileActiveProject = id;
       mobileIsFeatured = false;
       showMobileBack();
@@ -671,7 +736,7 @@
 
     function mShowPanel(id, btn) {
       mHideInfoPanels();
-      document.getElementById('mobile-img').src = window.SITE_FEATURED || 'images/featured.jpg';
+      mShowFeatured();
       document.getElementById(id).classList.add('active');
       mobileIsFeatured = true;
       mobileActiveProject = null;
@@ -684,8 +749,7 @@
 
     function mGoBack() {
       mHideInfoPanels();
-      document.getElementById('mobile-img').src = window.SITE_FEATURED || 'images/featured.jpg';
-      document.getElementById('mobile-img').style.display = 'block';
+      mShowFeatured();
       mobileIsFeatured = true;
       mobileActiveProject = null;
       hideMobileBack();
@@ -703,55 +767,11 @@
       document.getElementById('mobile-back-bar').classList.remove('visible');
     }
 
-    // ── Swipe: drag left/right to navigate the active project ──
-    // Works for the desktop project-view and the mobile view, including
-    // the project panels created dynamically from Sanity, via delegation.
-    (function () {
-      const THRESHOLD = 40; // min horizontal travel (px) to count as a swipe
-      let startX = 0, startY = 0, tracking = false;
+    // Navigation is now native vertical scrolling (wheel / trackpad / touch),
+    // so no custom swipe handling is needed — touch drag scrolls the gallery.
 
-      // The id of whatever project is currently on screen, or null.
-      function currentProject() {
-        return activeProject || (!mobileIsFeatured && mobileActiveProject) || null;
-      }
-
-      function step(id, dir) {
-        if (activeProject === id) stepProject(id, dir);
-        else mStepProject(id, dir);
-      }
-
-      document.addEventListener('touchstart', function (e) {
-        if (e.touches.length !== 1 || !currentProject()) { tracking = false; return; }
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        tracking = true;
-      }, { passive: true });
-
-      document.addEventListener('touchmove', function (e) {
-        if (!tracking) return;
-        const dx = e.touches[0].clientX - startX;
-        const dy = e.touches[0].clientY - startY;
-        // Once the gesture is clearly horizontal, stop the page from scrolling.
-        if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) && e.cancelable) {
-          e.preventDefault();
-        }
-      }, { passive: false });
-
-      document.addEventListener('touchend', function (e) {
-        if (!tracking) return;
-        tracking = false;
-        const id = currentProject();
-        if (!id) return;
-        const dx = e.changedTouches[0].clientX - startX;
-        const dy = e.changedTouches[0].clientY - startY;
-        if (Math.abs(dx) > THRESHOLD && Math.abs(dx) > Math.abs(dy)) {
-          step(id, dx < 0 ? 1 : -1); // swipe left → next, swipe right → previous
-          // Suppress the synthetic click the browser fires after the swipe.
-          window.__swipeJustHappened = true;
-          setTimeout(function () { window.__swipeJustHappened = false; }, 350);
-        }
-      }, { passive: true });
-    })();
+    // ── Mobile: show the featured image on load ───────
+    mShowFeatured();
 
   </script>
 
@@ -812,18 +832,17 @@
           // Register in the shared PROJECTS map used by the existing functions.
           PROJECTS[id] = { images: images };
 
-          // Desktop: project-view panel (full-bleed, click to advance).
+          // Desktop: project-view panel (vertical scroll gallery, built on open).
           const view = document.createElement('div');
           view.className = 'project-view';
           view.id = id;
-          view.addEventListener('click', () => cycleProject(id));
-          const img = document.createElement('img');
-          img.id = id + '-img';
-          img.alt = p.title || '';
+          const track = document.createElement('div');
+          track.className = 'scroll-track';
+          track.id = id + '-track';
           const counter = document.createElement('div');
           counter.className = 'project-counter';
           counter.id = id + '-counter';
-          view.appendChild(img);
+          view.appendChild(track);
           view.appendChild(counter);
           if (mainArea) mainArea.appendChild(view);
 
@@ -893,8 +912,7 @@
           window.SITE_FEATURED = featSrc;
           const deskImg = document.querySelector('#display-default img');
           if (deskImg) { deskImg.src = featSrc; deskImg.style.display = ''; }
-          const mobImg = document.getElementById('mobile-img');
-          if (mobImg) mobImg.src = featSrc;
+          if (typeof mobileIsFeatured === 'undefined' || mobileIsFeatured) mShowFeatured();
         }
 
         // Name.
